@@ -1,0 +1,58 @@
+name: Branchyng Strategy PREPRODUCCION
+on:
+  pull_request:
+    types: [ assigned, opened, synchronize ]
+    branches:
+      - preproduccion/*
+
+  workflow_call:
+    secrets:
+      TOKEN:
+        required: true
+
+permissions:
+  pull-requests: write
+
+env:
+  GITHUB_TOKEN: ${{ secrets.TOKEN }}
+  OWNER: ${{ secrets.OWNER }}
+  REPO: ${{ secrets.REPO }}
+  
+jobs:
+  Current-Branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_HEAD_REF#refs/heads/})"
+        id: extract_branch
+      - name: Echo Extract branch name
+        shell: bash
+        run: echo ${{ steps.extract_branch.outputs.branch }}
+      - name: Extract actor
+        shell: bash
+        run: echo "##[set-output name=actor;]$(echo ${GITHUB_ACTOR#refs/heads/})"
+        id: extract_actor
+      - name: Echo Extract actor name
+        shell: bash
+        run: echo ${{ steps.extract_actor.outputs.actor }}
+      - uses: jungwinter/split@v2
+        id: split
+        with:
+          msg: '${{ steps.extract_branch.outputs.branch }}'
+          separator: '/'
+    outputs: 
+      branch: ${{ steps.extract_branch.outputs.branch }}
+      proyect: ${{ steps.split.outputs._1 }}
+      actor: ${{ steps.extract_actor.outputs.branch }}
+  
+  CreatePullRequest:
+    runs-on: ubuntu-latest
+    environment:
+      name: preproduccion/${{needs.Current-Branch.outputs.proyect}}
+    needs: [Current-Branch]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Make changes to pull request
+        run:
+          curl -X POST -u ${{ env.GITHUB_TOKEN }}:x-oauth-basic -H "Accept:application/vnd.github+json" https://api.github.com/repos/${{ env.OWNER }}/${{ env.REPO }}/pulls -d '{"title":"Preproduccion/${{needs.Current-Branch.outputs.proyect}}-Main","body":"Please pull these new changes in!","head":"preproduccion/${{needs.Current-Branch.outputs.proyect}}","base":"main"}'

@@ -1,0 +1,47 @@
+name: Branchyng Strategy MAIN
+on:
+  pull_request:
+    types: [ assigned, opened, synchronize ]
+    branches:
+      - main
+
+  workflow_call:
+    secrets:
+      TOKEN:
+        required: true
+
+permissions:
+  pull-requests: write
+
+env:
+  GITHUB_TOKEN: ${{ secrets.TOKEN }}
+  OWNER: ${{ secrets.OWNER }}
+  REPO: ${{ secrets.REPO }}
+  
+jobs:
+  Current-Branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_HEAD_REF#refs/heads/})"
+        id: extract_branch
+      - name: Echo Extract branch name
+        shell: bash
+        run: echo ${{ steps.extract_branch.outputs.branch }}
+      - name: Extract actor
+        shell: bash
+        run: echo "##[set-output name=actor;]$(echo ${GITHUB_ACTOR#refs/heads/})"
+        id: extract_actor
+      - name: Echo Extract actor name
+        shell: bash
+        run: echo ${{ steps.extract_actor.outputs.actor }}
+      - uses: jungwinter/split@v2
+        id: split
+        with:
+          msg: '${{ steps.extract_branch.outputs.branch }}'
+          separator: '/'
+    outputs: 
+      branch: ${{ steps.extract_branch.outputs.branch }}
+      proyect: ${{ steps.split.outputs._1 }}
+      actor: ${{ steps.extract_actor.outputs.branch }}
