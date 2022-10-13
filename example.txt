@@ -1,3 +1,6 @@
 Create txt for example
 
 Ejemplo
+
+
+Intento de llamado al API mediante curl
